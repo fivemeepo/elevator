@@ -14,6 +14,8 @@ func main() {
 	var e sdk.Elevator
 	e.Init()
 	//e.Up(10)
+
+	// input command
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println("Please input: [up/down] [floor]")
 	for scanner.Scan() {

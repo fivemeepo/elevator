@@ -21,15 +21,10 @@ type ElevatorSDK interface {
 
 type Elevator struct {
 	mu           sync.Mutex
-	curDirection int // 0:stop, 1: up, 2:down
-	upTasks      *queue.Queue
-	downTasks    *queue.Queue
+	curDirection int           // 0:stop, 1: up, 2:down
+	upTasks      *queue.Queue  // upward task queue
+	downTasks    *queue.Queue  // downward task queue
 	signal       chan struct{} // elevator starts to run when receiving signal
-}
-
-type Task struct {
-	direction   int
-	targetFloor int
 }
 
 func (e *Elevator) Init() {
@@ -42,22 +37,22 @@ func (e *Elevator) Init() {
 func (e *Elevator) Up(curFloor int) {
 	// return immediatelly and start a new goroutine to handle the request asynchronously
 	log.Printf("receive up req, floor=%v", curFloor)
-	e.addTask(curFloor, Up)
+	go e.addTask(curFloor, Up)
 }
 
 func (e *Elevator) Down(curFloor int) {
 	// return immediatelly and start a new goroutine to handle the request asynchronously
 	log.Printf("receive down req, floor=%v", curFloor)
-	e.addTask(curFloor, Down)
+	go e.addTask(curFloor, Down)
 }
 
 // Goto should only be pressed after the person is already picked up.
 func (e *Elevator) Goto(curFloor int) {
 	log.Printf("receive goto req, floor=%v", curFloor)
 	if curFloor > internal.GetCurrentFloor() {
-		e.addTask(curFloor, Up)
+		go e.addTask(curFloor, Up)
 	} else {
-		e.addTask(curFloor, Down)
+		go e.addTask(curFloor, Down)
 	}
 }
 
@@ -68,35 +63,35 @@ func (e *Elevator) addTask(curFloor int, button int) {
 	EleFloor := internal.GetCurrentFloor()
 	var targetDirection int
 
-	// check current direction
+	// check current direction, and add new task to up/down task queue
 	switch e.curDirection {
-	case Stop: // equals to elevator's status == IDLE
+	case Stop:
 		if curFloor > EleFloor {
 			targetDirection = Up
-			e.upTasks.AddAsec(curFloor)
+			e.upTasks.AddAsc(&queue.Task{curFloor, button}, e.downTasks)
 		} else if curFloor < EleFloor {
 			targetDirection = Down
-			e.downTasks.AddDesc(curFloor)
+			e.downTasks.AddDesc(&queue.Task{curFloor, button}, e.upTasks)
 		}
 	case Up:
 		if curFloor > EleFloor {
 			if button == Up {
-				e.upTasks.AddAsec(curFloor)
+				e.upTasks.AddAsc(&queue.Task{curFloor, button}, e.downTasks)
 			} else {
-				e.downTasks.AddDesc(curFloor)
+				e.downTasks.AddDesc(&queue.Task{curFloor, button}, e.upTasks)
 			}
 		} else {
-			e.downTasks.AddDesc(curFloor)
+			e.downTasks.AddDesc(&queue.Task{curFloor, button}, e.upTasks)
 		}
 	case Down:
 		if curFloor < EleFloor {
 			if button == Down {
-				e.downTasks.AddDesc(curFloor)
+				e.downTasks.AddDesc(&queue.Task{curFloor, button}, e.upTasks)
 			} else {
-				e.upTasks.AddAsec(curFloor)
+				e.upTasks.AddAsc(&queue.Task{curFloor, button}, e.downTasks)
 			}
 		} else {
-			e.upTasks.AddAsec(curFloor)
+			e.upTasks.AddAsc(&queue.Task{curFloor, button}, e.downTasks)
 		}
 	default:
 		log.Fatal("unexpected direction")

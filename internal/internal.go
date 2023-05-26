@@ -17,6 +17,8 @@ var status = StatusIdle
 var mu sync.Mutex
 
 func GetCurrentFloor() int {
+	mu.Lock()
+	defer mu.Unlock()
 	return currentFloor
 }
 

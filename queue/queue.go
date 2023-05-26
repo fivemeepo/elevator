@@ -11,6 +11,16 @@ type Queue struct {
 	queue *list.List
 }
 
+const (
+	Up   = 1
+	Down = 2
+)
+
+type Task struct {
+	TargetFloor int
+	Direction   int
+}
+
 func New() *Queue {
 	var q Queue
 	q.queue = list.New()
@@ -18,65 +28,148 @@ func New() *Queue {
 }
 
 // Add an element into the queue in asec order
-func (q *Queue) AddAsec(v int) {
+func (q *Queue) AddAsc(v *Task, downQ *Queue) []*Task {
 	// empty list
 	if q.queue.Len() == 0 {
 		q.queue.PushBack(v)
-		return
+		return nil
 	}
+
+	// Tasks to be removed from upTaskQueue to downTaskQueue
+	var removedTasks []*Task
 
 	// insert the v into current position by asec
 	var p *list.Element
-	for p = q.queue.Front(); p.Next() != nil; p = p.Next() {
-		curValue := p.Value.(int)
+	for p = q.queue.Front(); p.Next() != nil; {
+		curValue := p.Value.(*Task).TargetFloor
+		curDirection := p.Value.(*Task).Direction
 		// don't insert duplicate value
-		if v == curValue {
-			return
-		} else if v < curValue {
-			q.queue.InsertBefore(v, p)
-			return
+		if v.TargetFloor == curValue {
+			if v.Direction == curDirection { // already exists, don't add duplicate tasks
+				return removedTasks
+			} else if v.Direction == Up { // replace the down task with up task
+				p.Value.(*Task).Direction = Up
+				removedTasks = append(removedTasks, &Task{p.Value.(*Task).TargetFloor, p.Value.(*Task).Direction})
+			}
+			p = p.Next()
+		} else if v.TargetFloor < curValue {
+			if v.Direction == Up {
+				q.queue.InsertBefore(v, p)
+			} else {
+				removedTasks = append(removedTasks, v)
+			}
+			return removedTasks
+		} else {
+			if p.Value.(*Task).Direction == Down {
+				removedTasks = append(removedTasks, &Task{p.Value.(*Task).TargetFloor, p.Value.(*Task).Direction})
+				next := p.Next()
+				q.queue.Remove(p)
+				p = next
+			} else {
+				p = p.Next()
+			}
 		}
 	}
+
+	// handle the last node
 	if p.Next() == nil {
-		if v > p.Value.(int) {
+		if v.TargetFloor > p.Value.(*Task).TargetFloor {
 			q.queue.InsertAfter(v, p)
-		} else if v < p.Value.(int) {
-			q.queue.InsertBefore(v, p)
+			if p.Value.(*Task).Direction == Down {
+				removedTasks = append(removedTasks, &Task{p.Value.(*Task).TargetFloor, p.Value.(*Task).Direction})
+				q.queue.Remove(p)
+			}
+		} else if v.TargetFloor < p.Value.(*Task).TargetFloor {
+			if v.Direction == Up {
+				q.queue.InsertBefore(v, p)
+			} else {
+				removedTasks = append(removedTasks, v)
+			}
 		}
 	}
+
+	if downQ != nil {
+		for _, v := range removedTasks {
+			downQ.AddDesc(v, q)
+		}
+	}
+
+	return removedTasks
 }
 
-// Add an element into the queue in desc order
-func (q *Queue) AddDesc(v int) {
+// Add an element into the queue in asec order
+func (q *Queue) AddDesc(v *Task, upQ *Queue) []*Task {
 	// empty list
 	if q.queue.Len() == 0 {
 		q.queue.PushBack(v)
-		return
+		return nil
 	}
+
+	// Tasks to be removed from upTaskQueue to downTaskQueue
+	var removedTasks []*Task
 
 	// insert the v into current position by asec
 	var p *list.Element
-	for p = q.queue.Front(); p.Next() != nil; p = p.Next() {
-		curValue := p.Value.(int)
+	for p = q.queue.Front(); p.Next() != nil; {
+		curValue := p.Value.(*Task).TargetFloor
+		curDirection := p.Value.(*Task).Direction
 		// don't insert duplicate value
-		if v == curValue {
-			return
-		} else if v > curValue {
-			q.queue.InsertBefore(v, p)
+		if v.TargetFloor == curValue {
+			if v.Direction == curDirection { // already exists, don't add duplicate tasks
+				return removedTasks
+			} else if v.Direction == Down { // replace the up task with up task
+				p.Value.(*Task).Direction = Down
+				removedTasks = append(removedTasks, &Task{p.Value.(*Task).TargetFloor, p.Value.(*Task).Direction})
+			}
+			p = p.Next()
+		} else if v.TargetFloor > curValue {
+			if v.Direction == Down {
+				q.queue.InsertBefore(v, p)
+			} else {
+				removedTasks = append(removedTasks, v)
+			}
+			return removedTasks
+		} else {
+			if p.Value.(*Task).Direction == Up {
+				removedTasks = append(removedTasks, &Task{p.Value.(*Task).TargetFloor, p.Value.(*Task).Direction})
+				next := p.Next()
+				q.queue.Remove(p)
+				p = next
+			} else {
+				p = p.Next()
+			}
 		}
 	}
+
+	// handle the last node
 	if p.Next() == nil {
-		if v > p.Value.(int) {
-			q.queue.InsertBefore(v, p)
-		} else if v < p.Value.(int) {
+		if v.TargetFloor < p.Value.(*Task).TargetFloor {
 			q.queue.InsertAfter(v, p)
+			if p.Value.(*Task).Direction == Up {
+				removedTasks = append(removedTasks, &Task{p.Value.(*Task).TargetFloor, p.Value.(*Task).Direction})
+				q.queue.Remove(p)
+			}
+		} else if v.TargetFloor > p.Value.(*Task).TargetFloor {
+			if v.Direction == Down {
+				q.queue.InsertBefore(v, p)
+			} else {
+				removedTasks = append(removedTasks, v)
+			}
 		}
 	}
+
+	if upQ != nil {
+		for _, v := range removedTasks {
+			upQ.AddAsc(v, q)
+		}
+	}
+
+	return removedTasks
 }
 
 // Get the first element's value
 func (q *Queue) Front() int {
-	return q.queue.Front().Value.(int)
+	return q.queue.Front().Value.(*Task).TargetFloor
 }
 
 // Popup the first element
