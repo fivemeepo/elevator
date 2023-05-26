@@ -27,6 +27,7 @@ type Elevator struct {
 	signal       chan struct{} // elevator starts to run when receiving signal
 }
 
+// Must call Init() in main()
 func (e *Elevator) Init() {
 	e.upTasks = queue.New()
 	e.downTasks = queue.New()
@@ -34,12 +35,14 @@ func (e *Elevator) Init() {
 	go e.run()
 }
 
+// Up button's handler
 func (e *Elevator) Up(curFloor int) {
 	// return immediatelly and start a new goroutine to handle the request asynchronously
 	log.Printf("receive up req, floor=%v", curFloor)
 	go e.addTask(curFloor, Up)
 }
 
+// Down button's handler
 func (e *Elevator) Down(curFloor int) {
 	// return immediatelly and start a new goroutine to handle the request asynchronously
 	log.Printf("receive down req, floor=%v", curFloor)
@@ -107,15 +110,16 @@ func (e *Elevator) addTask(curFloor int, button int) {
 // Trigger the elevator to run
 // it will be used as the callback function for internal.Up()/Down()
 func (e *Elevator) schedule() {
-	//log.Println("schedule")
 	// lazy init signal
 	if e.signal == nil {
 		e.signal = make(chan struct{})
 	}
+
+	// send a signal to start the elevator
 	e.signal <- struct{}{}
 }
 
-// move once and wait until the next signal comes
+// Move once and wait until the next signal comes
 func (e *Elevator) run() {
 	// lazy init signal
 	if e.signal == nil {
@@ -128,6 +132,7 @@ func (e *Elevator) run() {
 		<-e.signal
 		e.mu.Lock()
 
+		// check elevator's current direction
 		switch e.curDirection {
 		case Stop:
 			log.Printf("stop at floor=%v, waitint for new requests", internal.GetCurrentFloor())
@@ -156,7 +161,7 @@ func (e *Elevator) run() {
 			} else {
 				log.Printf("target floor=%v shouldn't be lower than current floor=%v when going up", curFloor, targetFloor)
 				e.mu.Unlock()
-				return
+				panic(0)
 			}
 
 		// same as going up
@@ -181,7 +186,7 @@ func (e *Elevator) run() {
 			} else {
 				log.Printf("target floor=%v shouldn't be lower than current floor=%v when going up", curFloor, targetFloor)
 				e.mu.Unlock()
-				return
+				panic(0)
 			}
 		}
 		e.mu.Unlock()
