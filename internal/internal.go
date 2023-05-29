@@ -15,7 +15,8 @@ const (
 var currentFloor = 1
 var status = StatusIdle
 var mu sync.Mutex
-var sleepTime = 2 * time.Second
+var sleepTime = 1 * time.Second
+var history []int
 
 func GetCurrentFloor() int {
 	mu.Lock()
@@ -35,6 +36,7 @@ func Up(f func()) {
 	time.Sleep(sleepTime)
 	currentFloor++
 	log.Printf("move up, cur=%v", currentFloor)
+	history = append(history, currentFloor)
 	f()
 }
 
@@ -44,5 +46,10 @@ func Down(f func()) {
 	time.Sleep(sleepTime)
 	currentFloor--
 	log.Printf("move down, cur=%v", currentFloor)
+	history = append(history, currentFloor)
 	f()
+}
+
+func ShowHistory() {
+	log.Printf("History:%v", history)
 }

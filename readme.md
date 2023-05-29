@@ -3,7 +3,7 @@
 
 # Get Started
 - Build: go build && ./elevator
-- Usage: [up|down|goto] [floor_number]
+- Usage: [up|down|goto|history] [floor_number]
 
 We provide 3 buttons:
 - up
@@ -15,6 +15,7 @@ Example:
 $ up 10
 $ down 2
 $ goto 5
+$ history
 ```
 
 # Design

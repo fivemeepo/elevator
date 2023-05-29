@@ -59,6 +59,10 @@ func (e *Elevator) Goto(curFloor int) {
 	}
 }
 
+func (e *Elevator) ShowHistory() {
+	internal.ShowHistory()
+}
+
 // When a user presses a button, add a task to the elevator's task queue
 func (e *Elevator) addTask(curFloor int, button int) {
 	e.mu.Lock()

@@ -16,7 +16,7 @@ func main() {
 
 	// input command
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Println("Please input: [up/down] [floor]")
+	fmt.Println("Please input: [up/down/goto/history] [floor]")
 	for scanner.Scan() {
 		cmd := scanner.Text()
 		if strings.Contains(cmd, "up ") {
@@ -37,6 +37,8 @@ func main() {
 				continue
 			}
 			e.Goto(floor)
+		} else if strings.HasPrefix(cmd, "history") {
+			e.ShowHistory()
 		}
 	}
 
