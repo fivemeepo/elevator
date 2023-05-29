@@ -15,6 +15,7 @@ const (
 var currentFloor = 1
 var status = StatusIdle
 var mu sync.Mutex
+var sleepTime = 2 * time.Second
 
 func GetCurrentFloor() int {
 	mu.Lock()
@@ -31,17 +32,17 @@ func GetCurrentStatus() int {
 func Up(f func()) {
 	mu.Lock()
 	defer mu.Unlock()
-	time.Sleep(1 * time.Second)
-	log.Printf("move up, cur=%v", currentFloor)
+	time.Sleep(sleepTime)
 	currentFloor++
+	log.Printf("move up, cur=%v", currentFloor)
 	f()
 }
 
 func Down(f func()) {
 	mu.Lock()
 	defer mu.Unlock()
-	time.Sleep(1 * time.Second)
-	log.Printf("move down, cur=%v", currentFloor)
+	time.Sleep(sleepTime)
 	currentFloor--
+	log.Printf("move down, cur=%v", currentFloor)
 	f()
 }

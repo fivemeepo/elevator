@@ -78,21 +78,21 @@ func (e *Elevator) addTask(curFloor int, button int) {
 		}
 	case Up:
 		if curFloor > EleFloor {
-			if button == Up {
-				e.upTasks.AddAsc(&queue.Task{curFloor, button}, e.downTasks)
-			} else {
-				e.downTasks.AddDesc(&queue.Task{curFloor, button}, e.upTasks)
-			}
+			//if button == Up {
+			e.upTasks.AddAsc(&queue.Task{curFloor, button}, e.downTasks)
+			//} else {
+			//e.downTasks.AddAsc(&queue.Task{curFloor, button}, e.upTasks)
+			//}
 		} else {
 			e.downTasks.AddDesc(&queue.Task{curFloor, button}, e.upTasks)
 		}
 	case Down:
 		if curFloor < EleFloor {
-			if button == Down {
-				e.downTasks.AddDesc(&queue.Task{curFloor, button}, e.upTasks)
-			} else {
-				e.upTasks.AddAsc(&queue.Task{curFloor, button}, e.downTasks)
-			}
+			//if button == Down {
+			e.downTasks.AddDesc(&queue.Task{curFloor, button}, e.upTasks)
+			//} else {
+			//		e.upTasks.AddAsc(&queue.Task{curFloor, button}, e.downTasks)
+			//}
 		} else {
 			e.upTasks.AddAsc(&queue.Task{curFloor, button}, e.downTasks)
 		}
@@ -184,7 +184,7 @@ func (e *Elevator) run() {
 					go e.schedule()
 				}
 			} else {
-				log.Printf("target floor=%v shouldn't be lower than current floor=%v when going up", curFloor, targetFloor)
+				log.Printf("target floor=%v shouldn't be lower than current floor=%v when going down", curFloor, targetFloor)
 				e.mu.Unlock()
 				panic(0)
 			}
